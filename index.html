@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,7 +41,7 @@ main{grid-area:main;padding:24px 28px 40px;min-width:0;max-width:1200px;width:10
 .footer-note{grid-area:foot;color:var(--muted);font-size:11.5px;text-align:center;padding:0 20px 20px;margin:0}
 .tab{display:none}.tab.active{display:block}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
-.stat{--tone:var(--accent);background:color-mix(in srgb,var(--tone) 9%,var(--panel));border:1px solid color-mix(in srgb,var(--tone) 26%,var(--border));border-radius:12px;padding:14px 16px}
+.stat{--tone:var(--accent);background:var(--panel2);border:1px solid var(--border);background:color-mix(in srgb,var(--tone) 9%,var(--panel));border:1px solid color-mix(in srgb,var(--tone) 26%,var(--border));border-radius:12px;padding:14px 16px}
 .stat .n{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .stat .l{color:var(--muted);font-size:12px;margin-top:2px}
 #statGrid .stat:nth-child(2),#ovStatGrid .stat:nth-child(1),#impLive .stat:nth-child(2){--tone:var(--bad)}
@@ -60,7 +61,7 @@ th{color:var(--muted);font-weight:700;font-size:11.5px;background:var(--panel2)}
 tbody tr:hover td{background:var(--panel2)}
 tr.r-bad td{background:color-mix(in srgb,var(--bad) 8%,transparent)}
 tr.r-warn td{background:color-mix(in srgb,var(--warn) 8%,transparent)}
-.pill{--tone:var(--ok);display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:700;background:color-mix(in srgb,var(--tone) 16%,transparent);color:color-mix(in srgb,var(--tone) 72%,var(--text))}
+.pill{--tone:var(--ok);display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:700;background:var(--panel2);color:var(--text);background:color-mix(in srgb,var(--tone) 16%,transparent);color:color-mix(in srgb,var(--tone) 72%,var(--text))}
 .pill::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--tone)}
 .pill.ok{--tone:var(--ok)}.pill.warn{--tone:var(--warn)}.pill.bad{--tone:var(--bad)}.pill.info{--tone:var(--info)}
 .bar{height:6px;width:84px;background:var(--border);border-radius:3px;margin-top:5px;overflow:hidden}
@@ -77,6 +78,7 @@ tr.r-warn td{background:color-mix(in srgb,var(--warn) 8%,transparent)}
 .health .sub{color:var(--muted);font-size:13px;margin-bottom:10px}
 .chat{background:var(--panel);border:1px solid var(--border);border-radius:16px;height:420px;display:flex;flex-direction:column;overflow:hidden}
 .chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--panel2)}
+.msg,.log,#modResult,.card b{overflow-wrap:anywhere}
 .msg{max-width:80%;padding:9px 13px;border-radius:14px;font-size:13.5px;line-height:1.4}
 .msg.bot{background:var(--panel);align-self:flex-start;border:1px solid var(--border)}
 .msg.user{background:var(--accent);color:#fff;align-self:flex-end}
@@ -109,6 +111,7 @@ input[type=number],input[type=text],select{font-family:inherit}
       <option value="faculty">👤 Role: Faculty</option>
       <option value="maintenance">👤 Role: Maintenance</option>
     </select>
+    <button class="badge" id="resetBtn" style="cursor:pointer" title="Clear everything and start a fresh demo">↺ Reset demo</button>
     <span class="badge" id="clock"></span>
   </div>
 </header>
@@ -243,7 +246,7 @@ input[type=number],input[type=text],select{font-family:inherit}
     </div>
     <p id="modDesc" style="color:var(--muted);font-size:12.5px;margin-top:0"></p>
     <div class="row" style="margin-bottom:10px"><label style="font-size:12px;color:var(--muted)">Participant / subject</label>
-      <input id="modName" value="Aarav Mehta" style="background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:8px"></div>
+      <input id="modName" maxlength="60" value="Aarav Mehta" style="background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:8px"></div>
     <div class="grid" id="modForm"></div>
     <div class="row"><button class="btn" id="modRun">▶ Run Prediction</button><button class="btn secondary" id="modRand">🎲 Load demo values</button></div>
   </div>
@@ -261,7 +264,7 @@ input[type=number],input[type=text],select{font-family:inherit}
         <span class="chip" data-q="Report an issue with AC in Room 12">Report AC issue Room 12</span>
       </div>
       <div class="chat-input">
-        <input id="chatInput" placeholder="Ask ClassCare bot...">
+        <input id="chatInput" maxlength="200" placeholder="Ask ClassCare bot...">
         <button id="chatSend">Send</button>
       </div>
     </div>
@@ -281,6 +284,10 @@ input[type=number],input[type=text],select{font-family:inherit}
 
 <script>
 // ---------- Data ----------
+function toast(msg){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#0B3B45;color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;z-index:99;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:90vw';document.body.appendChild(t);}t.textContent=msg;clearTimeout(t._h);t._h=setTimeout(()=>t.remove(),6000);}
+window.addEventListener('error',()=>toast('Something went wrong. Press ↺ Reset demo to start fresh.'));
+window.addEventListener('unhandledrejection',()=>toast('Something went wrong. Press ↺ Reset demo to start fresh.'));
+document.addEventListener('DOMContentLoaded',()=>{document.getElementById('resetBtn').addEventListener('click',()=>location.reload());});
 const rooms = ["LH-101","LH-204","Lab-3","Sem-12","LH-305","Studio-2"];
 const equipTypes = ["Projector","Smart Board","AC Unit","Mic System","Wi-Fi AP","CCTV Camera","Water Dispenser"];
 const providers = ["TechFix Services","CampusCare Vendors","ElectroServe Ltd"];
@@ -332,6 +339,7 @@ function pillClass(status){
 
 function log(msg){
   auditLog.unshift({t:new Date().toLocaleTimeString(), msg});
+  if(auditLog.length>200) auditLog.length=200;
   renderAudit();
 }
 
@@ -359,7 +367,7 @@ function renderEquipment(){
       <td>${e.room}</td><td>${TYPE_ICON[e.type]||''} ${e.type}</td><td>${e.usage}h</td>
       <td>${e.daysSinceService}</td><td>${e.pastFailures}</td>
       <td><b>${e.risk}</b>${e.margin?'±'+e.margin:''}/100<div class="bar"><i class="${barCls(e.status)}" style="width:${e.risk}%"></i></div></td>
-      <td><span class="pill ${pillClass(e.status)}">${e.status}</span></td>
+      <td><span class="pill ${pillClass(e.status)}">${e.status}${e.overridden?' · reviewed':''}</span></td>
     </tr>`).join('');
 }
 
@@ -435,7 +443,7 @@ window.approvePending = function(equipId){
   const p = pendingApprovals.find(p=>p.equipId===equipId);
   if(!p) return;
   const e = equipment.find(e=>e.id===equipId);
-  if(e) createTicket(e);
+  if(e && !tickets.some(t=>t.equipId===e.id && t.status!=="Resolved")) createTicket(e);
   pendingApprovals = pendingApprovals.filter(x=>x.equipId!==equipId);
   renderPending(); renderTickets(); renderOverview();
 };
@@ -443,7 +451,7 @@ window.rejectPending = function(equipId){
   log(`Human override: ${equipId} prediction dismissed as false positive — no ticket created`);
   pendingApprovals = pendingApprovals.filter(x=>x.equipId!==equipId);
   const e = equipment.find(e=>e.id===equipId);
-  if(e){ e.status="Healthy"; renderEquipment(); }
+  if(e){ e.status="Healthy"; e.overridden=true; renderEquipment(); }
   renderPending(); renderOverview();
 };
 function renderPending(){
@@ -463,6 +471,7 @@ function runScan(){
   window._scanned=true;
   log("AI monitoring scan started across all classrooms");
   equipment.forEach(e=>{
+    e.overridden = false;
     e.risk = computeRisk(e);
     e.margin = Math.floor(3+Math.random()*7);
     e.status = statusFromRisk(e.risk);
@@ -537,7 +546,7 @@ function renderOverview(){
 
   const topRisk = [...equipment].sort((a,b)=>b.risk-a.risk).slice(0,5);
   document.getElementById('ovEquip').innerHTML = topRisk.length ? topRisk.map(e=>`
-    <tr class="${rowCls(e.status)}"><td>${TYPE_ICON[e.type]||''} ${e.id}</td><td><b>${e.risk}</b>/100<div class="bar"><i class="${barCls(e.status)}" style="width:${e.risk}%"></i></div></td><td><span class="pill ${pillClass(e.status)}">${e.status}</span></td></tr>
+    <tr class="${rowCls(e.status)}"><td>${TYPE_ICON[e.type]||''} ${e.id}</td><td><b>${e.risk}</b>/100<div class="bar"><i class="${barCls(e.status)}" style="width:${e.risk}%"></i></div></td><td><span class="pill ${pillClass(e.status)}">${e.status}${e.overridden?' · reviewed':''}</span></td></tr>
   `).join('') : '<tr><td colspan="3" style="color:var(--muted)">Run equipment scan.</td></tr>';
 
   const openTix = tickets.filter(t=>t.status!=='Resolved').slice(0,5);
@@ -636,7 +645,7 @@ const MODS={
   run:v=>{const idx=Math.round(((v.c+v.d+v.p+v.s)/20)*100);const w=v.txt.toLowerCase();const sent=posWords.filter(x=>w.includes(x)).length-negWords.filter(x=>w.includes(x)).length;const tag=sent>0?'Positive':sent<0?'Negative':'Neutral';const low=['Content','Delivery','Pace','Support'][[v.c,v.d,v.p,v.s].indexOf(Math.min(v.c,v.d,v.p,v.s))];return{score:idx,label:`Satisfaction ${idx>=75?'High':idx>=55?'Moderate':'Low'} · ${tag} comment`,action:`Lowest-rated area: ${low}. Share with faculty for improvement.`}}},
  roomwise:{name:'RoomWise',desc:'Intelligent classroom recommendation',
   fields:[N('size','Class size',5,150,45),S('proj','Needs projector',['Yes','No']),S('lab','Needs lab setup',['No','Yes']),S('acc','Needs accessibility',['No','Yes'])],
-  run:v=>{const r=modRooms.map(m=>{let s=0;if(m.cap<v.size)return{n:m.n,s:0};s=100-((m.cap-v.size)/m.cap)*40;if(v.proj==='Yes'&&!m.proj)s-=40;if(v.lab==='Yes'&&!m.lab)s-=40;if(v.acc==='Yes'&&!m.acc)s-=30;const risk=equipment.filter(e=>e.room===m.n&&e.status==='Faulty / High Risk').length;s-=Math.min(50,risk*25);return{n:m.n,s:Math.max(0,Math.round(s)),cap:m.cap,risk}}).sort((a,b)=>b.s-a.s).slice(0,3);return{label:`Best fit: ${r[0].n}`,items:r.map(x=>`${x.n} — fit ${x.s}/100${x.cap?` (capacity ${x.cap})`:' (too small)'}${x.risk?` ⚠ ${x.risk} high-risk device(s) flagged by ClassCare`:''}`),action:'Rooms with ClassCare high-risk devices are ranked lower. Confirm availability with the timetable before booking'}}},
+  run:v=>{const r=modRooms.map(m=>{let s=0;if(m.cap<v.size)return{n:m.n,s:0};s=100-((m.cap-v.size)/m.cap)*40;if(v.proj==='Yes'&&!m.proj)s-=40;if(v.lab==='Yes'&&!m.lab)s-=40;if(v.acc==='Yes'&&!m.acc)s-=30;const risk=equipment.filter(e=>e.room===m.n&&e.status==='Faulty / High Risk').length;s-=Math.min(50,risk*25);return{n:m.n,s:Math.max(0,Math.round(s)),cap:m.cap,risk}}).sort((a,b)=>b.s-a.s).slice(0,3);if(r[0].s===0)return{label:'No room is large enough',items:[],action:'Split the group, or ask for a larger venue (largest demo room seats 120)'};return{label:`Best fit: ${r[0].n}`,items:r.map(x=>`${x.n} — fit ${x.s}/100${x.cap?` (capacity ${x.cap})`:' (too small)'}${x.risk?` ⚠ ${x.risk} high-risk device(s) flagged by ClassCare`:''}`),action:'Rooms with ClassCare high-risk devices are ranked lower. Confirm availability with the timetable before booking'}}},
  conceptradar:{name:'ConceptRadar',desc:'Learning difficulty / topic-risk prediction',
   fields:[N('diff','Topic difficulty (1–5)',1,5,4),N('pre','Prerequisite mastery %',0,100,55),N('quiz','Average quiz score on topic %',0,100,48),N('hrs','Study hours spent',0,20,3)],
   run:v=>{const s=Math.round(clamp(v.diff*10+(100-v.pre)*0.3+(100-v.quiz)*0.4-v.hrs*2));const b=band(s,60,40);return{score:s,label:b+' topic risk',action:b==='High'?'Re-teach this topic and add a worked-example session':b==='Medium'?'Share a recap sheet and run a short quiz':'Topic is on track'}}},
@@ -658,7 +667,7 @@ function renderModForm(){
   document.getElementById('modForm').innerHTML=m.fields.map(f=>`<div class="stat"><div class="l" style="margin:0 0 6px">${f.label}</div>`+
     (f.type==='number'?`<input id="mf_${f.id}" type="number" min="${f.min}" max="${f.max}" value="${f.val}" style="width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:7px;border-radius:8px">`
     :f.type==='select'?`<select id="mf_${f.id}" style="width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:7px;border-radius:8px">${f.opts.map(o=>`<option>${o}</option>`).join('')}</select>`
-    :`<input id="mf_${f.id}" type="text" value="${f.val}" style="width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:7px;border-radius:8px">`)+`</div>`).join('');
+    :`<input id="mf_${f.id}" type="text" maxlength="200" value="${f.val}" style="width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:7px;border-radius:8px">`)+`</div>`).join('');
 }
 function runModule(){
   const m=MODS[curMod],v={};
@@ -760,7 +769,7 @@ function botReply(q){
   }
   if(ql.includes('report') && ql.includes('ac') && ql.includes('12')){
     const e = equipment.find(e=>e.room==="Sem-12" && e.type==="AC Unit");
-    if(e){ e.risk=Math.max(e.risk,75); e.status="Faulty / High Risk"; createTicket(e); renderEquipment(); renderStats(); renderTickets();
+    if(e){ const ex=tickets.find(t=>t.equipId===e.id&&t.status!=="Resolved"); if(ex) return `A ticket (#${ex.id}) is already open for this device (${ex.status}), so no duplicate was created.`; pendingApprovals=pendingApprovals.filter(q=>q.equipId!==e.id); renderPending(); e.risk=Math.max(e.risk,75); e.status="Faulty / High Risk"; createTicket(e); renderEquipment(); renderStats(); renderTickets();
       return "Thanks — I've logged the AC issue in Sem-12 and auto-created a maintenance ticket. You'll see it under Tickets & Follow-up.";
     }
   }
@@ -772,7 +781,7 @@ function botReply(q){
 }
 function sendChat(){
   const input=document.getElementById('chatInput');
-  const q=input.value.trim();
+  const q=input.value.trim().slice(0,200);
   if(!q) return;
   addMsg(q,'user');
   input.value='';
