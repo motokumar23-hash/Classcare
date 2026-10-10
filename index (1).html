@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ClassCare — AI Equipment Maintenance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF3F4; --panel:#FFFFFF; --panel2:#F2F7F8; --text:#10303A; --muted:#5C757B; --border:#D9E5E7;
+  --accent:#1C8C8C; --ok:#1FA971; --warn:#E59A1B; --bad:#E5533D; --info:#3B82F6; --hdr:#0B3B45;
+  --shadow:0 1px 2px rgba(11,59,69,.06),0 8px 20px rgba(11,59,69,.05);
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#0A1B21; --panel:#102B33; --panel2:#163640; --text:#E4F1F2; --muted:#93AFB5; --border:#21444E;
+    --accent:#2BB3B3; --ok:#34D399; --warn:#F5B240; --bad:#FF7A66; --info:#6AA2FF; --shadow:none; }
+}
+:root[data-theme="dark"]{ --bg:#0A1B21; --panel:#102B33; --panel2:#163640; --text:#E4F1F2; --muted:#93AFB5; --border:#21444E;
+  --accent:#2BB3B3; --ok:#34D399; --warn:#F5B240; --bad:#FF7A66; --info:#6AA2FF; --shadow:none; }
+*{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:"Plus Jakarta Sans","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;font-size:14px;line-height:1.5;
+  display:grid;grid-template-columns:236px minmax(0,1fr);grid-template-rows:auto 1fr auto;grid-template-areas:"head head" "nav main" "nav foot"}
+header{grid-area:head;background:var(--hdr);color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border-radius:12px;background:var(--accent);display:grid;place-items:center;font-size:21px}
+header h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.01em}
+header p{margin:0;font-size:12.5px;color:#A9D3D3}
+.badge{background:var(--panel2);border:1px solid var(--border);padding:5px 12px;border-radius:999px;font-size:12px;color:var(--muted);font-family:inherit}
+header .badge{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.22);color:#fff}
+header select option{color:#10303A}
+nav{grid-area:nav;display:flex;flex-direction:column;gap:4px;padding:16px 12px;background:var(--panel);border-right:1px solid var(--border)}
+nav button{display:flex;align-items:center;gap:10px;text-align:left;background:transparent;border:0;color:var(--muted);padding:10px 12px;border-radius:10px;cursor:pointer;font:inherit;font-weight:600}
+nav button:hover{background:var(--panel2);color:var(--text)}
+nav button.active{background:var(--accent);color:#fff}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--info) 55%,transparent);outline-offset:2px}
+main{grid-area:main;padding:24px 28px 40px;min-width:0;max-width:1200px;width:100%}
+.footer-note{grid-area:foot;color:var(--muted);font-size:11.5px;text-align:center;padding:0 20px 20px;margin:0}
+.tab{display:none}.tab.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.stat{--tone:var(--accent);background:color-mix(in srgb,var(--tone) 9%,var(--panel));border:1px solid color-mix(in srgb,var(--tone) 26%,var(--border));border-radius:12px;padding:14px 16px}
+.stat .n{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.stat .l{color:var(--muted);font-size:12px;margin-top:2px}
+#statGrid .stat:nth-child(2),#ovStatGrid .stat:nth-child(1),#impLive .stat:nth-child(2){--tone:var(--bad)}
+#statGrid .stat:nth-child(3){--tone:var(--warn)}
+#statGrid .stat:nth-child(4),#ovStatGrid .stat:nth-child(2),#energyStatGrid .stat:nth-child(3),#impLive .stat:nth-child(3),#impHead .stat:nth-child(3){--tone:var(--info)}
+#ovStatGrid .stat:nth-child(3),#energyStatGrid .stat:nth-child(1),#impLive .stat:nth-child(4),#impHead .stat:nth-child(1){--tone:var(--ok)}
+.card{overflow-x:auto;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 10px;font-size:15px;font-weight:700}
+.promo{background:color-mix(in srgb,var(--accent) 12%,var(--panel));border-color:color-mix(in srgb,var(--accent) 35%,var(--border))}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn{background:var(--accent);color:#fff;border:0;padding:9px 16px;border-radius:10px;cursor:pointer;font:inherit;font-size:13px;font-weight:700}
+.btn:hover{filter:brightness(1.08)}
+.btn.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px;display:table}
+th,td{padding:10px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+th{color:var(--muted);font-weight:700;font-size:11.5px;background:var(--panel2)}
+tbody tr:hover td{background:var(--panel2)}
+tr.r-bad td{background:color-mix(in srgb,var(--bad) 8%,transparent)}
+tr.r-warn td{background:color-mix(in srgb,var(--warn) 8%,transparent)}
+.pill{--tone:var(--ok);display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:700;background:color-mix(in srgb,var(--tone) 16%,transparent);color:color-mix(in srgb,var(--tone) 72%,var(--text))}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--tone)}
+.pill.ok{--tone:var(--ok)}.pill.warn{--tone:var(--warn)}.pill.bad{--tone:var(--bad)}.pill.info{--tone:var(--info)}
+.bar{height:6px;width:84px;background:var(--border);border-radius:3px;margin-top:5px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px}
+.bar i.ok{background:var(--ok)}.bar i.warn{background:var(--warn)}.bar i.bad{background:var(--bad)}
+.log{--tone:var(--accent);font-size:12.5px;color:var(--muted);border-left:3px solid var(--tone);padding:3px 0 3px 10px;margin-bottom:8px}
+.log b{color:var(--text)}
+.log.bad{--tone:var(--bad)}.log.warn{--tone:var(--warn)}.log.info{--tone:var(--info)}.log.ok{--tone:var(--ok)}
+.health{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.ring{--p:0;--c:var(--border);width:116px;height:116px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p)*1%),var(--border) 0);display:grid;place-items:center;position:relative;flex:none}
+.ring::before{content:"";position:absolute;inset:12px;background:var(--panel);border-radius:50%}
+.ring span{position:relative;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.health h2{margin:0 0 2px;font-size:20px;font-weight:800;letter-spacing:-.01em}
+.health .sub{color:var(--muted);font-size:13px;margin-bottom:10px}
+.chat{background:var(--panel);border:1px solid var(--border);border-radius:16px;height:420px;display:flex;flex-direction:column;overflow:hidden}
+.chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--panel2)}
+.msg{max-width:80%;padding:9px 13px;border-radius:14px;font-size:13.5px;line-height:1.4}
+.msg.bot{background:var(--panel);align-self:flex-start;border:1px solid var(--border)}
+.msg.user{background:var(--accent);color:#fff;align-self:flex-end}
+.chat-input{display:flex;border-top:1px solid var(--border);background:var(--panel)}
+.chat-input input{flex:1;background:transparent;border:none;color:var(--text);padding:13px;font:inherit;outline:none}
+.chat-input button{background:none;border:none;color:var(--accent);padding:0 18px;cursor:pointer;font-weight:700;font-family:inherit}
+.chips{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--border);background:var(--panel)}
+.chip{font-size:12px;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:999px;cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+input[type=number],input[type=text],select{font-family:inherit}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+@media (max-width:860px){
+  body{grid-template-columns:1fr;grid-template-areas:"head" "nav" "main" "foot"}
+  nav{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--border);padding:10px 14px}
+  nav button{padding:8px 12px;font-size:13px}
+  main{padding:18px 16px 32px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">🛠️</div>
+    <div><h1>ClassCare</h1><p>AI-driven classroom equipment care · synthetic demo data</p></div>
+  </div>
+  <div class="row" style="gap:8px">
+    <select id="roleSelect" class="badge" style="cursor:pointer">
+      <option value="admin">👤 Role: Admin</option>
+      <option value="faculty">👤 Role: Faculty</option>
+      <option value="maintenance">👤 Role: Maintenance</option>
+    </select>
+    <span class="badge" id="clock"></span>
+  </div>
+</header>
+<nav>
+  <button class="tabBtn active" data-tab="overview">🏠 Overview</button>
+  <button class="tabBtn" data-tab="impact">⭐ Impact Map</button>
+  <button class="tabBtn" data-tab="dashboard">🛠️ Equipment</button>
+  <button class="tabBtn" data-tab="tickets">🎫 Tickets & Follow-up</button>
+  <button class="tabBtn" data-tab="energy">🌱 Energy & Carbon</button>
+  <button class="tabBtn" data-tab="modules">🧠 Campus AI Modules</button>
+  <button class="tabBtn" data-tab="chat">💬 Chatbot</button>
+  <button class="tabBtn" data-tab="audit">📋 Governance / Audit</button>
+</nav>
+<main>
+
+<div class="tab active" id="overview">
+  <div class="row" style="justify-content:space-between;margin-bottom:12px;flex-wrap:wrap">
+    <h3 style="margin:0;font-size:15px">All Systems — Consolidated View</h3>
+    <button class="btn" id="refreshAllBtn">↻ Refresh All Systems</button>
+  </div>
+  <div class="card promo" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+    <div><b>See how ClassCare lifts all 9 other projects</b><div style="color:var(--muted);font-size:12.5px">Modelled impact on ClassPulse, EngageAI, Energy, LearnPath, Feedback360, RoomWise, ConceptRadar, AttendSmart and CampusLearn.</div></div>
+    <button class="btn" id="goImpact">Open Impact Map →</button>
+  </div>
+  <div class="card" id="ovHealth"></div>
+  <div class="grid" id="ovStatGrid"></div>
+
+  <div class="grid" style="grid-template-columns:1fr 1fr">
+    <div class="card">
+      <h3>🔧 Equipment — Top Risks</h3>
+      <table><thead><tr><th>Room/Device</th><th>Risk</th><th>Status</th></tr></thead><tbody id="ovEquip"></tbody></table>
+    </div>
+    <div class="card">
+      <h3>🎫 Open Tickets</h3>
+      <table><thead><tr><th>ID</th><th>Equipment</th><th>Status</th></tr></thead><tbody id="ovTickets"></tbody></table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🌱 Energy & Carbon</h3>
+    <p id="ovEnergySummary" style="font-size:13px;color:var(--muted)">No harvest cycle run yet.</p>
+  </div>
+
+  <div class="card">
+    <h3>📈 Trend — Energy Recovered Across Cycles</h3>
+    <svg id="trendSvg" viewBox="0 0 600 140" style="width:100%;height:140px"></svg>
+    <p style="color:var(--muted);font-size:11.5px;margin-top:4px">Green = energy recovered (kWh) per harvest cycle</p>
+  </div>
+
+  <div class="card">
+    <h3>📋 Recent Activity</h3>
+    <div id="ovAudit"></div>
+    <button class="btn secondary" id="exportBtn" style="margin-top:10px">⬇ Download Session Report (CSV)</button>
+  </div>
+</div>
+
+<div class="tab" id="dashboard">
+  <div class="grid" id="statGrid"></div>
+  <div class="card">
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h3 style="margin:0">Live Infra Monitoring — Equipment Risk (Azure ML prediction)</h3>
+      <button class="btn" id="scanBtn">▶ Run AI Monitoring Scan</button>
+    </div>
+    <table>
+      <thead><tr><th>Room</th><th>Equipment</th><th>Usage/wk</th><th>Days Since Service</th><th>Past Failures</th><th>Risk Score</th><th>Status</th></tr></thead>
+      <tbody id="eqBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="tab" id="tickets">
+  <div class="card" id="pendingCard" style="display:none">
+    <h3 style="color:var(--warn)">⏳ Pending Human Approval (High-Risk Predictions)</h3>
+    <p style="color:var(--muted);font-size:12px;margin-top:-4px">The ML model flagged these — a person confirms before a real ticket/vendor dispatch is created, in case the prediction is wrong.</p>
+    <div id="pendingList"></div>
+  </div>
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h3>Auto-Generated Tickets</h3>
+      <button class="btn secondary" id="simTimeBtn" style="padding:7px 12px;font-size:12px">⏱ Simulate Time Passing (SLA check)</button>
+    </div>
+    <p style="color:var(--muted);font-size:12.5px;margin-top:-4px">Created automatically when ML risk score crosses threshold and is approved. Escalates automatically if SLA is breached.</p>
+    <table>
+      <thead><tr><th>Ticket ID</th><th>Equipment</th><th>Service Provider</th><th>Status</th><th>Created</th><th>SLA</th><th>Action</th></tr></thead>
+      <tbody id="ticketBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="tab" id="energy">
+  <div class="grid" id="energyStatGrid"></div>
+  <div class="card">
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h3 style="margin:0">Thermal Energy Recovery</h3>
+      <button class="btn" id="energyBtn">▶ Run Energy Harvest Cycle</button>
+    </div>
+    <p style="color:var(--muted);font-size:12.5px">Waste heat from projectors, ACs and server/network equipment is captured via thermoelectric generators (TEGs) and heat-exchange units, converted to usable electricity, and fed back into classroom lighting/charging circuits — reducing grid draw and the building's carbon footprint.</p>
+    <table>
+      <thead><tr><th>Room</th><th>Devices Contributing</th><th>Heat Captured (kWh)</th><th>Energy Recovered (kWh)</th><th>CO₂ Avoided (kg)</th></tr></thead>
+      <tbody id="energyBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="tab" id="impact">
+  <div class="card">
+    <h3>🔗 ClassCare → Impact on Every Other Project</h3>
+    <p style="color:var(--muted);font-size:12.5px;margin-top:-4px">Reliable classrooms are the shared foundation for all ten projects. Tune the assumptions below to see how fewer equipment failures lift each project's outcome.</p>
+    <div class="grid" id="impLive"></div>
+    <div class="grid">
+      <div class="stat"><div class="l" style="margin:0 0 6px">Downtime avoided by ClassCare: <b id="impRv"></b></div><input id="impR" type="range" min="0" max="80" value="40" style="width:100%"></div>
+      <div class="stat"><div class="l" style="margin:0 0 6px">Baseline downtime (hrs / room / week): <b id="impDv"></b></div><input id="impD" type="range" min="1" max="12" value="6" style="width:100%"></div>
+      <div class="stat"><div class="l" style="margin:0 0 6px">Classrooms covered: <b id="impNv"></b></div><input id="impN" type="range" min="1" max="30" value="6" style="width:100%"></div>
+    </div>
+  </div>
+  <div class="grid" id="impHead"></div>
+  <div class="grid" id="impCards" style="grid-template-columns:repeat(auto-fit,minmax(270px,1fr))"></div>
+  <div class="card"><details><summary style="cursor:pointer;font-size:13px">Assumptions behind the model</summary><div id="impAssume" style="font-size:12.5px;color:var(--muted);margin-top:8px"></div></details></div>
+  <p class="footer-note">Illustrative, assumption-based model for demonstration — not measured results. Validate with a pilot and real baselines before claiming impact.</p>
+</div>
+
+<div class="tab" id="modules">
+  <div class="card">
+    <h3>Smart Classroom AI Modules — Group 1–10 Inputs</h3>
+    <p style="color:var(--muted);font-size:12.5px;margin-top:-4px">Pick a project, enter inputs (or load random demo values) and run the prediction / recommendation. All data is synthetic/demo; results are advisory and need human review. Scoring here is a stand-in for each group's Azure ML model.</p>
+    <div class="chips" id="modChips" style="padding:0;border:none"></div>
+  </div>
+  <div class="card">
+    <div class="row" style="justify-content:space-between;margin-bottom:8px">
+      <h3 style="margin:0" id="modTitle"></h3>
+      <span class="badge">Synthetic / demo data</span>
+    </div>
+    <p id="modDesc" style="color:var(--muted);font-size:12.5px;margin-top:0"></p>
+    <div class="row" style="margin-bottom:10px"><label style="font-size:12px;color:var(--muted)">Participant / subject</label>
+      <input id="modName" value="Aarav Mehta" style="background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:8px"></div>
+    <div class="grid" id="modForm"></div>
+    <div class="row"><button class="btn" id="modRun">▶ Run Prediction</button><button class="btn secondary" id="modRand">🎲 Load demo values</button></div>
+  </div>
+  <div class="card" id="modResultCard" style="display:none"><h3>Result</h3><div id="modResult"></div></div>
+</div>
+
+<div class="tab" id="chat">
+  <div class="card">
+    <h3>Dialogflow Chatbot — Ask about equipment or tickets</h3>
+    <div class="chat">
+      <div class="chat-msgs" id="chatMsgs"></div>
+      <div class="chips">
+        <span class="chip" data-q="Is Room 204 projector at risk?">Room 204 projector status?</span>
+        <span class="chip" data-q="Show open tickets">Show open tickets</span>
+        <span class="chip" data-q="Report an issue with AC in Room 12">Report AC issue Room 12</span>
+      </div>
+      <div class="chat-input">
+        <input id="chatInput" placeholder="Ask ClassCare bot...">
+        <button id="chatSend">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tab" id="audit">
+  <div class="card">
+    <h3>Enterprise Governance — Audit Log</h3>
+    <p style="color:var(--muted);font-size:12.5px;margin-top:-4px">Every automated action (scan, alert, ticket, escalation) is logged for traceability. Access to raw equipment data is role-based (Maintenance / Faculty / Admin). No PII is stored — all data below is synthetic/demo.</p>
+    <div id="auditLog"></div>
+  </div>
+</div>
+
+</main>
+<p class="footer-note">Synthetic demo data · Risk scores simulate an Azure ML prediction endpoint · Chatbot simulates Dialogflow intent routing</p>
+
+<script>
+// ---------- Data ----------
+const rooms = ["LH-101","LH-204","Lab-3","Sem-12","LH-305","Studio-2"];
+const equipTypes = ["Projector","Smart Board","AC Unit","Mic System","Wi-Fi AP","CCTV Camera","Water Dispenser"];
+const providers = ["TechFix Services","CampusCare Vendors","ElectroServe Ltd"];
+let equipment = [];
+let tickets = [];
+let auditLog = [];
+let ticketCounter = 1000;
+
+function seedEquipment(){
+  equipment = [];
+  rooms.forEach((room,i)=>{
+    equipTypes.forEach((type,j)=>{
+      if((i+j)%2===0 || Math.random()>0.4 || (room==="LH-204"&&type==="Projector") || (room==="Sem-12"&&type==="AC Unit")){
+        const hot=(room==="LH-204"&&type==="Projector")||(room==="Sem-12"&&type==="AC Unit");
+        equipment.push({
+          id: room+"-"+type.replace(/\s/g,''),
+          room, type,
+          usage: hot?48+Math.floor(Math.random()*8):Math.floor(15+Math.random()*35),
+          daysSinceService: hot?150+Math.floor(Math.random()*30):Math.floor(5+Math.pow(Math.random(),1.5)*170),
+          pastFailures: hot?2+Math.floor(Math.random()*2):(()=>{const q=Math.random();return q<0.6?0:q<0.9?1:2;})(),
+          risk: 0, status:"Healthy"
+        });
+      }
+    });
+  });
+}
+
+function computeRisk(e){
+  // Simulated Azure ML prediction: weighted logistic-style score (0-100)
+  let score = 0;
+  score += Math.min(e.usage/60,1)*30;
+  score += Math.min(e.daysSinceService/180,1)*40;
+  score += Math.min(e.pastFailures/3,1)*30;
+  score += (Math.random()*10-5);
+  return Math.max(0,Math.min(100,Math.round(score)));
+}
+
+function statusFromRisk(r){
+  if(r>=70) return "Faulty / High Risk";
+  if(r>=40) return "Warning";
+  return "Healthy";
+}
+
+function pillClass(status){
+  if(status==="Faulty / High Risk") return "bad";
+  if(status==="Warning") return "warn";
+  return "ok";
+}
+
+function log(msg){
+  auditLog.unshift({t:new Date().toLocaleTimeString(), msg});
+  renderAudit();
+}
+
+// ---------- Rendering ----------
+function renderStats(){
+  const total=equipment.length;
+  const faulty=equipment.filter(e=>e.status==="Faulty / High Risk").length;
+  const warn=equipment.filter(e=>e.status==="Warning").length;
+  const openT=tickets.filter(t=>t.status!=="Resolved").length;
+  document.getElementById('statGrid').innerHTML=`
+    <div class="stat"><div class="n">${total}</div><div class="l">Monitored Devices</div></div>
+    <div class="stat"><div class="n" style="color:var(--bad)">${faulty}</div><div class="l">High Risk / Faulty</div></div>
+    <div class="stat"><div class="n" style="color:var(--warn)">${warn}</div><div class="l">Warning</div></div>
+    <div class="stat"><div class="n" style="color:var(--accent)">${openT}</div><div class="l">Open Tickets</div></div>
+  `;
+}
+
+const TYPE_ICON={"Projector":"📽️","Smart Board":"🖥️","AC Unit":"❄️","Mic System":"🎙️","Wi-Fi AP":"📶","CCTV Camera":"📹","Water Dispenser":"💧"};
+const rowCls=s=>s==="Faulty / High Risk"?"r-bad":s==="Warning"?"r-warn":"";
+const barCls=s=>s==="Faulty / High Risk"?"bad":s==="Warning"?"warn":"ok";
+function logTone(m){return /breach|escalat/i.test(m)?'bad':/awaiting|flagged|dismiss|override/i.test(m)?'warn':/resolved|closed|complete/i.test(m)?'ok':/ticket|approved|created/i.test(m)?'info':'';}
+function renderEquipment(){
+  document.getElementById('eqBody').innerHTML = equipment.map(e=>`
+    <tr class="${rowCls(e.status)}">
+      <td>${e.room}</td><td>${TYPE_ICON[e.type]||''} ${e.type}</td><td>${e.usage}h</td>
+      <td>${e.daysSinceService}</td><td>${e.pastFailures}</td>
+      <td><b>${e.risk}</b>${e.margin?'±'+e.margin:''}/100<div class="bar"><i class="${barCls(e.status)}" style="width:${e.risk}%"></i></div></td>
+      <td><span class="pill ${pillClass(e.status)}">${e.status}</span></td>
+    </tr>`).join('');
+}
+
+function renderTickets(){
+  document.getElementById('ticketBody').innerHTML = tickets.map(t=>`
+    <tr>
+      <td>#${t.id}</td><td>${t.equipId}</td><td>${t.provider}</td>
+      <td><span class="pill ${t.status==='Resolved'?'ok':t.status==='In Progress'?'info':t.status==='Escalated'?'bad':'warn'}">${t.status}</span></td>
+      <td>${t.created}</td>
+      <td>${t.sla}</td>
+      <td>${t.status!=='Resolved' ? `<button class="btn secondary" onclick="advanceTicket('${t.id}')" style="padding:5px 10px;font-size:12px">Advance</button>` : '—'}</td>
+    </tr>`).join('') || '<tr><td colspan="7" style="color:var(--muted)">No tickets yet — run a monitoring scan.</td></tr>';
+}
+
+function renderAudit(){
+  document.getElementById('auditLog').innerHTML = auditLog.map(a=>`<div class="log ${logTone(a.msg)}"><b>${a.t}</b> — ${a.msg}</div>`).join('') || '<div class="log">No actions yet. Run a monitoring scan to start the audit trail.</div>';
+}
+
+window.advanceTicket = function(id){
+  const t = tickets.find(x=>String(x.id)===String(id));
+  if(!t) return;
+  if(t.status==="Open"){ t.status="In Progress"; log(`Ticket #${t.id} moved to In Progress by ${t.provider}`); }
+  else if(t.status==="In Progress" || t.status==="Escalated"){ t.status="Resolved"; log(`Ticket #${t.id} closed — equipment restored to Healthy`);
+    const e = equipment.find(e=>e.id===t.equipId);
+    if(e){ e.risk=Math.floor(Math.random()*15); e.status="Healthy"; e.daysSinceService=0; }
+    renderEquipment(); renderStats();
+  }
+  renderTickets();
+};
+
+function createTicket(e){
+  const provider = providers[Math.floor(Math.random()*providers.length)];
+  const slaHours = e.risk>=85 ? 4 : 24;
+  const t = {
+    id: ticketCounter++,
+    equipId: e.id,
+    provider,
+    status: "Open",
+    created: new Date().toLocaleString(),
+    sla: slaHours + " hrs" + (slaHours===4?" (Critical)":" (Standard)"),
+    slaHours, elapsed: 0
+  };
+  tickets.unshift(t);
+  log(`Ticket #${t.id} created (human-approved), assigned to ${provider}`);
+}
+
+function simulateTimePassing(){
+  let escalated=0;
+  tickets.forEach(t=>{
+    if(t.status==="Open" || t.status==="In Progress" || t.status==="Escalated"){
+      t.elapsed += 6;
+      if(t.elapsed >= t.slaHours && t.status!=="Escalated" && t.status!=="Resolved"){
+        t.status="Escalated"; escalated++;
+        log(`SLA BREACH: Ticket #${t.id} exceeded ${t.slaHours}h SLA — auto-escalated to senior vendor contact`);
+      }
+    }
+  });
+  if(!escalated) log("Time-passing simulation run — all open tickets still within SLA");
+  renderTickets(); renderOverview();
+}
+document.getElementById('simTimeBtn').addEventListener('click', simulateTimePassing);
+
+let pendingApprovals = [];
+let energyHistoryArr = [];
+let currentRole = 'admin';
+
+function flagForApproval(e){
+  if(pendingApprovals.some(p=>p.equipId===e.id) || tickets.some(t=>t.equipId===e.id && t.status!=="Resolved")) return;
+  pendingApprovals.push({equipId:e.id, risk:e.risk, margin:e.margin, room:e.room, type:e.type});
+  log(`ML flagged ${e.id} (risk ${e.risk}±${e.margin}) — awaiting human approval before ticket dispatch`);
+}
+window.approvePending = function(equipId){
+  const p = pendingApprovals.find(p=>p.equipId===equipId);
+  if(!p) return;
+  const e = equipment.find(e=>e.id===equipId);
+  if(e) createTicket(e);
+  pendingApprovals = pendingApprovals.filter(x=>x.equipId!==equipId);
+  renderPending(); renderTickets(); renderOverview();
+};
+window.rejectPending = function(equipId){
+  log(`Human override: ${equipId} prediction dismissed as false positive — no ticket created`);
+  pendingApprovals = pendingApprovals.filter(x=>x.equipId!==equipId);
+  const e = equipment.find(e=>e.id===equipId);
+  if(e){ e.status="Healthy"; renderEquipment(); }
+  renderPending(); renderOverview();
+};
+function renderPending(){
+  const card = document.getElementById('pendingCard');
+  card.style.display = pendingApprovals.length ? 'block' : 'none';
+  document.getElementById('pendingList').innerHTML = pendingApprovals.map(p=>`
+    <div class="row" style="justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span>${p.equipId} — risk <b>${p.risk}±${p.margin}</b></span>
+      <span class="row" style="gap:6px">
+        <button class="btn" style="padding:5px 10px;font-size:12px" onclick="approvePending('${p.equipId}')">✓ Approve Ticket</button>
+        <button class="btn secondary" style="padding:5px 10px;font-size:12px" onclick="rejectPending('${p.equipId}')">✕ Dismiss</button>
+      </span>
+    </div>`).join('');
+}
+
+function runScan(){
+  window._scanned=true;
+  log("AI monitoring scan started across all classrooms");
+  equipment.forEach(e=>{
+    e.risk = computeRisk(e);
+    e.margin = Math.floor(3+Math.random()*7);
+    e.status = statusFromRisk(e.risk);
+    if(e.status==="Faulty / High Risk"){ flagForApproval(e); }
+  });
+  log("Scan complete — risk scores updated, predictions routed for approval where needed");
+  renderEquipment(); renderStats(); renderTickets(); renderPending();
+  renderOverview();
+}
+
+// ---------- Thermal Energy Recovery & Carbon Footprint (simulated) ----------
+function runEnergyHarvest(){
+  log("Energy harvest cycle started — capturing waste heat from active devices");
+  const rows = rooms.map(room=>{
+    const devices = equipment.filter(e=>e.room===room).length || 1;
+    const heat = +(devices * (1.2+Math.random()*0.8)).toFixed(2);
+    const recovered = +(heat*0.35).toFixed(2); // ~35% thermoelectric conversion efficiency
+    const co2 = +(recovered*0.71).toFixed(2); // grid emission factor approx kg CO2/kWh
+    return {room, devices, heat, recovered, co2};
+  });
+  document.getElementById('energyBody').innerHTML = rows.map(r=>`
+    <tr><td>${r.room}</td><td>${r.devices}</td><td>${r.heat}</td><td>${r.recovered}</td><td>${r.co2}</td></tr>
+  `).join('');
+  const totalRecovered = rows.reduce((s,r)=>s+r.recovered,0).toFixed(2);
+  const totalCO2 = rows.reduce((s,r)=>s+r.co2,0).toFixed(2);
+  document.getElementById('energyStatGrid').innerHTML = `
+    <div class="stat"><div class="n" style="color:var(--ok)">${totalRecovered} kWh</div><div class="l">Energy Recovered Today</div></div>
+    <div class="stat"><div class="n" style="color:var(--accent)">${totalCO2} kg</div><div class="l">CO₂ Emissions Avoided</div></div>
+    <div class="stat"><div class="n">${rows.length}</div><div class="l">Rooms Contributing</div></div>
+  `;
+  log(`Energy harvest complete — ${totalRecovered} kWh recovered, ${totalCO2} kg CO₂ avoided`);
+  window._lastEnergy = {totalRecovered, totalCO2};
+  energyHistoryArr.push(+totalRecovered);
+  if(energyHistoryArr.length>8) energyHistoryArr.shift();
+  renderOverview();
+}
+document.getElementById('energyBtn').addEventListener('click', runEnergyHarvest);
+document.getElementById('energyStatGrid').innerHTML = `
+  <div class="stat"><div class="n">—</div><div class="l">Energy Recovered Today</div></div>
+  <div class="stat"><div class="n">—</div><div class="l">CO₂ Emissions Avoided</div></div>
+  <div class="stat"><div class="n">—</div><div class="l">Rooms Contributing</div></div>`;
+
+// ---------- Overview (single-view dashboard) ----------
+function renderHealth(){
+  const tot=equipment.length||1,hi=equipment.filter(e=>e.status==="Faulty / High Risk").length,wa=equipment.filter(e=>e.status==="Warning").length,ok=tot-hi-wa;
+  const open=tickets.filter(t=>t.status!=="Resolved").length,pend=pendingApprovals.length,pct=Math.round(ok/tot*100);
+  const el=document.getElementById('ovHealth');
+  if(!window._scanned){
+    el.innerHTML=`<div class="health"><div class="ring"><span>–</span></div><div><h2>No scan yet</h2><div class="sub">Run the AI monitoring scan to check every device and flag the ones likely to fail.</div><button class="btn" id="ovGo">▶ Run first scan</button></div></div>`;
+    document.getElementById('ovGo').onclick=()=>{runScan();};return;}
+  const col=pct>=80?'var(--ok)':pct>=60?'var(--warn)':'var(--bad)';
+  const head=hi?`${hi} device${hi>1?'s':''} need attention`:wa?'Mostly healthy, a few warnings':'All devices healthy';
+  el.innerHTML=`<div class="health"><div class="ring" style="--p:${pct};--c:${col}"><span>${pct}%</span></div>
+    <div><h2>${head}</h2><div class="sub">${open} open ticket${open===1?'':'s'} · ${pend} awaiting approval</div>
+    <div class="row"><span class="pill ok">${ok} healthy</span><span class="pill warn">${wa} warning</span><span class="pill bad">${hi} high risk</span>
+    ${pend?'<button class="btn" id="ovGo" style="margin-left:6px">Review approvals</button>':''}</div></div></div>`;
+  const g=document.getElementById('ovGo');if(g)g.onclick=()=>document.querySelector('[data-tab="tickets"]').click();
+}
+function renderOverview(){
+  renderHealth();
+  const faulty = equipment.filter(e=>e.status==="Faulty / High Risk").length;
+  const openT = tickets.filter(t=>t.status!=="Resolved").length;
+  const totalRecovered = window._lastEnergy ? window._lastEnergy.totalRecovered : null;
+  const totalCO2 = window._lastEnergy ? window._lastEnergy.totalCO2 : null;
+
+  document.getElementById('ovStatGrid').innerHTML = `
+    <div class="stat"><div class="n" style="color:var(--bad)">${faulty}</div><div class="l">Devices High Risk</div></div>
+    <div class="stat"><div class="n" style="color:var(--accent)">${openT}</div><div class="l">Open Tickets</div></div>
+    <div class="stat"><div class="n" style="color:var(--ok)">${totalRecovered!==null?totalRecovered+' kWh':'—'}</div><div class="l">Energy Recovered</div></div>
+    <div class="stat"><div class="n" style="color:var(--accent)">${totalCO2!==null?totalCO2+' kg':'—'}</div><div class="l">CO₂ Avoided</div></div>
+  `;
+
+  const topRisk = [...equipment].sort((a,b)=>b.risk-a.risk).slice(0,5);
+  document.getElementById('ovEquip').innerHTML = topRisk.length ? topRisk.map(e=>`
+    <tr class="${rowCls(e.status)}"><td>${TYPE_ICON[e.type]||''} ${e.id}</td><td><b>${e.risk}</b>/100<div class="bar"><i class="${barCls(e.status)}" style="width:${e.risk}%"></i></div></td><td><span class="pill ${pillClass(e.status)}">${e.status}</span></td></tr>
+  `).join('') : '<tr><td colspan="3" style="color:var(--muted)">Run equipment scan.</td></tr>';
+
+  const openTix = tickets.filter(t=>t.status!=='Resolved').slice(0,5);
+  document.getElementById('ovTickets').innerHTML = openTix.length ? openTix.map(t=>`
+    <tr><td>#${t.id}</td><td>${t.equipId}</td><td><span class="pill ${t.status==='In Progress'?'info':'warn'}">${t.status}</span></td></tr>
+  `).join('') : '<tr><td colspan="3" style="color:var(--muted)">No open tickets.</td></tr>';
+
+  document.getElementById('ovEnergySummary').innerHTML = window._lastEnergy ?
+    `<b>${window._lastEnergy.totalRecovered} kWh</b> recovered · <b>${window._lastEnergy.totalCO2} kg</b> CO₂ avoided today` :
+    'No harvest cycle run yet.';
+
+  document.getElementById('ovAudit').innerHTML = auditLog.slice(0,6).map(a=>`<div class="log ${logTone(a.msg)}"><b>${a.t}</b> — ${a.msg}</div>`).join('') || '<div class="log">No activity yet. Run a scan to get started.</div>';
+  renderTrend();
+}
+
+document.getElementById('refreshAllBtn').addEventListener('click', ()=>{
+  runScan(); runEnergyHarvest(); renderOverview();
+});
+
+// ---------- RBAC ----------
+function applyRole(){
+  const hide = currentRole !== 'admin';
+  document.querySelectorAll('.rbac-health').forEach(el=> el.style.display = hide ? 'none' : '');
+}
+document.getElementById('roleSelect').addEventListener('change', e=>{
+  currentRole = e.target.value;
+  log(`View switched to role: ${currentRole}`);
+  applyRole(); renderOverview();
+});
+
+// ---------- Trend chart ----------
+function renderTrend(){
+  const svg = document.getElementById('trendSvg');
+  const w=600,h=140,pad=20;
+  function pathFor(arr,scaleMax){
+    if(arr.length<2) return '';
+    return arr.map((v,i)=>{
+      const x = pad + i*(w-2*pad)/Math.max(1,arr.length-1);
+      const y = h-pad - (v/scaleMax)*(h-2*pad);
+      return (i===0?'M':'L')+x.toFixed(1)+','+y.toFixed(1);
+    }).join(' ');
+  }
+  const enePath = pathFor(energyHistoryArr, Math.max(10,...energyHistoryArr,1));
+  svg.innerHTML = `
+    <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="var(--border)"/>
+    ${enePath?`<path d="${enePath}" fill="none" stroke="#34d399" stroke-width="2.5"/>`:''}
+    ${!enePath?`<text x="${w/2}" y="${h/2}" fill="var(--muted)" font-size="12" text-anchor="middle">Run a few harvest cycles to build a trend</text>`:''}
+  `;
+}
+
+// ---------- Export ----------
+async function exportReport(){
+  let csv = "Section,Field,Value\n";
+  equipment.forEach(e=> csv += `Equipment,${e.id},${e.risk}±${e.margin||0} (${e.status})\n`);
+  tickets.forEach(t=> csv += `Ticket,#${t.id},${t.equipId} - ${t.status}\n`);
+  if(window._lastEnergy) csv += `Energy,Recovered,${window._lastEnergy.totalRecovered} kWh\nEnergy,CO2 Avoided,${window._lastEnergy.totalCO2} kg\n`;
+  try{
+    if(typeof claude!=='undefined' && claude.use){
+      const downloads = await claude.use("downloads");
+      await downloads.save({filename:"classcare_session_report.csv", data:csv});
+    } else {
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+      a.download='classcare_session_report.csv';
+      document.body.appendChild(a);a.click();a.remove();
+    }
+    log("Session report exported as CSV");
+  }catch(err){ log("Export failed: "+err.message); }
+}
+document.getElementById('exportBtn').addEventListener('click', exportReport);
+
+// ---------- Campus AI Modules (Groups 1,2,3,4,6,7,8,9,10 — synthetic stand-ins) ----------
+const clamp=(v,a=0,b=100)=>Math.max(a,Math.min(b,v));
+const N=(id,label,min,max,val)=>({id,label,type:'number',min,max,val});
+const S=(id,label,opts)=>({id,label,type:'select',opts});
+const T=(id,label,val)=>({id,label,type:'text',val});
+const band=(s,hi,mid)=>s>=hi?'High':s>=mid?'Medium':'Low';
+const modRooms=[{n:'LH-101',cap:120,proj:1,lab:0,acc:1},{n:'LH-204',cap:80,proj:1,lab:0,acc:0},{n:'Lab-3',cap:40,proj:1,lab:1,acc:1},{n:'Sem-12',cap:25,proj:0,lab:0,acc:1},{n:'LH-305',cap:60,proj:1,lab:0,acc:0},{n:'Studio-2',cap:30,proj:1,lab:1,acc:0}];
+const catalog=[{t:'ML Foundations (self-paced)',tag:'Machine Learning',f:'Video'},{t:'Applied ML Lab Workshop',tag:'Machine Learning',f:'Hands-on'},{t:'Data Governance Essentials',tag:'Data Governance',f:'Reading'},{t:'Privacy & Responsible AI Case Studies',tag:'Data Governance',f:'Reading'},{t:'Cloud AI on Azure Bootcamp',tag:'Cloud',f:'Hands-on'},{t:'Cloud Architecture Primer',tag:'Cloud',f:'Video'},{t:'AI Product Strategy Playbook',tag:'Product Strategy',f:'Reading'},{t:'AI Roadmapping Studio',tag:'Product Strategy',f:'Hands-on'}];
+const posWords=['good','great','clear','helpful','engaging','excellent','useful'], negWords=['boring','confusing','fast','unclear','poor','bad','slow'];
+const MODS={
+ classpulse:{name:'ClassPulse',desc:'Student performance & academic-risk prediction',
+  fields:[N('marks','Average marks %',0,100,62),N('att','Attendance %',0,100,75),N('sub','Assignments submitted %',0,100,70),N('trend','Recent quiz trend (-10 to +10)',-10,10,-2)],
+  run:v=>{const s=Math.round(clamp(100-(0.45*v.marks+0.25*v.att+0.2*v.sub)-v.trend*1.5));const b=band(s,55,35);return{score:s,label:b+' academic risk',action:b==='High'?'Schedule mentor meeting and a remedial plan':b==='Medium'?'Send a nudge and re-check in 2 weeks':'No action – on track'}}},
+ engageai:{name:'EngageAI',desc:'Classroom engagement prediction (non-biometric signals only)',
+  fields:[N('poll','Poll response rate %',0,100,65),N('q','Questions asked per session',0,15,4),N('part','Student contributions per session',0,12,3),N('len','Session length (min)',30,180,60)],
+  run:v=>{const s=Math.round(clamp(0.4*v.poll+v.q*4+v.part*5-(v.len>90?8:0)));const b=s>=70?'High':s>=45?'Moderate':'Low';return{score:s,label:b+' engagement',action:b==='Low'?'Add an interactive activity or shorten the session':b==='Moderate'?'Insert a mid-session poll or Q&A':'Keep the current delivery style'}}},
+ energy:{name:'SmartClass Energy',desc:'Classroom energy consumption prediction',
+  fields:[N('occ','Occupancy %',0,100,60),N('temp','Outdoor temperature °C',10,45,33),N('ac','AC running hours',0,12,6),N('light','Lighting hours',0,12,8),N('dev','Devices switched on',0,30,10)],
+  run:v=>{const kwh=2.2*v.ac*(1+Math.max(0,v.temp-24)*0.04)+0.4*v.light+0.8*v.dev+0.02*v.occ;const k=+kwh.toFixed(1);return{score:k,unit:' kWh/day',label:k>40?'High consumption':k>25?'Normal consumption':'Efficient',action:`Est. cost ₹${Math.round(k*8)} · ${(k*0.71).toFixed(1)} kg CO₂. `+(k>40?'Pre-cool earlier and cut idle devices. ':'Within expected range. ')+(window._lastEnergy?`ClassCare thermal recovery today: ${window._lastEnergy.totalRecovered} kWh across rooms.`:'')}}},
+ learnpath:{name:'LearnPath AI',desc:'Personalized learning recommendation',
+  fields:[N('lvl','Current level (1–5)',1,5,2),S('style','Preferred style',['Visual','Reading','Practice']),N('hrs','Weekly study hours',1,20,5),S('weak','Weakest topic',['Statistics','Python','ML Basics','Data Ethics'])],
+  run:v=>{const steps=[`Refresh ${v.weak} with ${v.style==='Visual'?'short videos':v.style==='Reading'?'curated readings':'practice sets'}`,v.lvl<3?'Complete the beginner track (weeks 1–3)':'Move to the intermediate project track',v.hrs<6?'Plan 3 short sessions per week':'Add one weekly mini-project','Take a self-check quiz and review results with a mentor'];return{label:'Personalised path ready',items:steps,action:'Review path with mentor before enrolment'}}},
+ feedback360:{name:'Feedback360',desc:'Classroom feedback / satisfaction analysis',
+  fields:[N('c','Content rating (1–5)',1,5,4),N('d','Delivery rating (1–5)',1,5,3),N('p','Pace rating (1–5)',1,5,3),N('s','Support rating (1–5)',1,5,4),T('txt','Comment','Clear explanations but the pace was fast')],
+  run:v=>{const idx=Math.round(((v.c+v.d+v.p+v.s)/20)*100);const w=v.txt.toLowerCase();const sent=posWords.filter(x=>w.includes(x)).length-negWords.filter(x=>w.includes(x)).length;const tag=sent>0?'Positive':sent<0?'Negative':'Neutral';const low=['Content','Delivery','Pace','Support'][[v.c,v.d,v.p,v.s].indexOf(Math.min(v.c,v.d,v.p,v.s))];return{score:idx,label:`Satisfaction ${idx>=75?'High':idx>=55?'Moderate':'Low'} · ${tag} comment`,action:`Lowest-rated area: ${low}. Share with faculty for improvement.`}}},
+ roomwise:{name:'RoomWise',desc:'Intelligent classroom recommendation',
+  fields:[N('size','Class size',5,150,45),S('proj','Needs projector',['Yes','No']),S('lab','Needs lab setup',['No','Yes']),S('acc','Needs accessibility',['No','Yes'])],
+  run:v=>{const r=modRooms.map(m=>{let s=0;if(m.cap<v.size)return{n:m.n,s:0};s=100-((m.cap-v.size)/m.cap)*40;if(v.proj==='Yes'&&!m.proj)s-=40;if(v.lab==='Yes'&&!m.lab)s-=40;if(v.acc==='Yes'&&!m.acc)s-=30;const risk=equipment.filter(e=>e.room===m.n&&e.status==='Faulty / High Risk').length;s-=Math.min(50,risk*25);return{n:m.n,s:Math.max(0,Math.round(s)),cap:m.cap,risk}}).sort((a,b)=>b.s-a.s).slice(0,3);return{label:`Best fit: ${r[0].n}`,items:r.map(x=>`${x.n} — fit ${x.s}/100${x.cap?` (capacity ${x.cap})`:' (too small)'}${x.risk?` ⚠ ${x.risk} high-risk device(s) flagged by ClassCare`:''}`),action:'Rooms with ClassCare high-risk devices are ranked lower. Confirm availability with the timetable before booking'}}},
+ conceptradar:{name:'ConceptRadar',desc:'Learning difficulty / topic-risk prediction',
+  fields:[N('diff','Topic difficulty (1–5)',1,5,4),N('pre','Prerequisite mastery %',0,100,55),N('quiz','Average quiz score on topic %',0,100,48),N('hrs','Study hours spent',0,20,3)],
+  run:v=>{const s=Math.round(clamp(v.diff*10+(100-v.pre)*0.3+(100-v.quiz)*0.4-v.hrs*2));const b=band(s,60,40);return{score:s,label:b+' topic risk',action:b==='High'?'Re-teach this topic and add a worked-example session':b==='Medium'?'Share a recap sheet and run a short quiz':'Topic is on track'}}},
+ attendsmart:{name:'AttendSmart',desc:'Attendance risk prediction (from attendance history, no biometrics)',
+  fields:[N('att','Attendance last 4 weeks %',0,100,72),N('abs','Consecutive absences',0,10,2),N('km','Commute distance (km)',0,60,18),N('exam','Weeks to next exam',0,16,6)],
+  run:v=>{const s=Math.round(clamp((100-v.att)*1.2+v.abs*8+v.km*0.6-(v.exam<3?10:0)));const b=band(s,55,30);return{score:s,label:b+' absence risk',action:b==='High'?'Mentor outreach and check for barriers':b==='Medium'?'Send a friendly reminder':'No action needed'}}},
+ campuslearn:{name:'CampusLearn',desc:'Course / learning-resource recommendation',
+  fields:[S('prog','Programme',['CDAIO','MBA Analytics','M.Tech AI']),S('int','Interest area',['Machine Learning','Data Governance','Cloud','Product Strategy']),N('done','Courses completed',0,15,3),S('fmt','Preferred format',['Video','Reading','Hands-on'])],
+  run:v=>{const r=catalog.map(c=>({c,s:(c.tag===v.int?60:0)+(c.f===v.fmt?30:0)+(v.done>5&&c.f==='Hands-on'?10:0)})).sort((a,b)=>b.s-a.s).slice(0,3);return{label:`Top pick: ${r[0].c.t}`,items:r.map(x=>`${x.c.t} — ${x.c.tag}, ${x.c.f} (match ${x.s}%)`),action:'Advisor confirms enrolment'}}}
+};
+let curMod='classpulse';
+const eh=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function renderModForm(){
+  const m=MODS[curMod];
+  document.getElementById('modChips').innerHTML=Object.keys(MODS).map(k=>`<span class="chip" style="${k===curMod?'background:var(--accent);color:#fff':''}" data-k="${k}">${MODS[k].name}</span>`).join('');
+  document.querySelectorAll('#modChips .chip').forEach(c=>c.onclick=()=>{curMod=c.dataset.k;document.getElementById('modResultCard').style.display='none';renderModForm();});
+  document.getElementById('modTitle').textContent=m.name;
+  document.getElementById('modDesc').textContent=m.desc;
+  document.getElementById('modForm').innerHTML=m.fields.map(f=>`<div class="stat"><div class="l" style="margin:0 0 6px">${f.label}</div>`+
+    (f.type==='number'?`<input id="mf_${f.id}" type="number" min="${f.min}" max="${f.max}" value="${f.val}" style="width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:7px;border-radius:8px">`
+    :f.type==='select'?`<select id="mf_${f.id}" style="width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:7px;border-radius:8px">${f.opts.map(o=>`<option>${o}</option>`).join('')}</select>`
+    :`<input id="mf_${f.id}" type="text" value="${f.val}" style="width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:7px;border-radius:8px">`)+`</div>`).join('');
+}
+function runModule(){
+  const m=MODS[curMod],v={};
+  m.fields.forEach(f=>{const el=document.getElementById('mf_'+f.id);v[f.id]=f.type==='number'?clamp(parseFloat(el.value)||0,f.min,f.max):el.value;});
+  const r=m.run(v),name=eh(document.getElementById('modName').value||'Demo participant');
+  document.getElementById('modResultCard').style.display='block';
+  document.getElementById('modResult').innerHTML=`<div style="font-size:12px;color:var(--muted)">${name} · ${m.name}</div>
+    <div style="font-size:22px;font-weight:700;margin:6px 0">${r.score!==undefined?r.score+(r.unit||'/100')+' — ':''}${r.label}</div>
+    ${r.items?'<ul style="margin:6px 0 10px 18px;font-size:13px">'+r.items.map(i=>`<li>${eh(i)}</li>`).join('')+'</ul>':''}
+    <div class="log"><b>Recommended action:</b> ${eh(r.action)}</div>
+    <div style="font-size:11.5px;color:var(--muted)">Synthetic/demo data · advisory only — human review required before any action.</div>`;
+  log(`${m.name}: ${name} → ${r.label}`);
+}
+function loadDemo(){
+  MODS[curMod].fields.forEach(f=>{const el=document.getElementById('mf_'+f.id);
+    if(f.type==='number')el.value=Math.round(f.min+Math.random()*(f.max-f.min));
+    else if(f.type==='select')el.selectedIndex=Math.floor(Math.random()*f.opts.length);});
+  const names=['Aarav Mehta','Priya Nair','Rohan Iyer','Sneha Kulkarni','Vikram Rao'];
+  document.getElementById('modName').value=names[Math.floor(Math.random()*names.length)];
+}
+document.getElementById('modRun').addEventListener('click',runModule);
+document.getElementById('modRand').addEventListener('click',loadDemo);
+renderModForm();
+
+// ---------- Impact Map: ClassCare -> other projects (illustrative model) ----------
+const IMP=[
+{g:1,n:'ClassPulse',kpi:'Students at academic risk',u:'%',base:18,down:1,co:'−0.20 pt per pt of teaching time recovered',f:(r,d)=>18-0.20*d,why:'Fewer lost lectures give better syllabus coverage and fewer students falling behind.'},
+{g:2,n:'EngageAI',kpi:'Average class engagement',u:'/100',base:62,down:0,co:'+0.50 per pt recovered',f:(r,d)=>62+0.5*d,why:'Working projector, mic and Wi-Fi keep sessions interactive instead of stalling.'},
+{g:3,n:'SmartClass Energy',kpi:'Energy per room per day',u:' kWh',base:32,down:1,co:'−10% at full maintenance coverage',f:(r)=>32*(1-0.10*r),why:'Serviced AC and devices run efficiently; recovered waste heat offsets grid draw.'},
+{g:4,n:'LearnPath AI',kpi:'Recommended-path completion',u:'%',base:55,down:0,co:'+0.40 pt per pt recovered',f:(r,d)=>55+0.4*d,why:'Video and hands-on steps in a path need reliable A/V and connectivity.'},
+{g:6,n:'Feedback360',kpi:'Satisfaction index',u:'/100',base:68,down:0,co:'+0.60 per pt recovered',f:(r,d)=>68+0.6*d,why:'Equipment failures are a common complaint; fewer outages lift ratings.'},
+{g:7,n:'RoomWise',kpi:'Last-minute room swaps',u:'%',base:12,down:1,co:'−60% at full coverage',f:(r)=>12*(1-0.6*r),why:'Rooms with predicted faults are flagged early, so bookings avoid them (live link in RoomWise).'},
+{g:8,n:'ConceptRadar',kpi:'Topics flagged high-risk',u:'%',base:22,down:1,co:'−0.20 pt per pt recovered',f:(r,d)=>22-0.20*d,why:'Fewer disrupted sessions mean fewer topics taught incompletely.'},
+{g:9,n:'AttendSmart',kpi:'Students at absence risk',u:'%',base:15,down:1,co:'−0.15 pt per pt recovered',f:(r,d)=>15-0.15*d,why:'Reliable classes keep students motivated to attend.'},
+{g:10,n:'CampusLearn',kpi:'Resource completion rate',u:'%',base:48,down:0,co:'+0.35 pt per pt recovered',f:(r,d)=>48+0.35*d,why:'Digital resources are reached through working displays, Wi-Fi and devices.'}
+];
+function renderImpact(){
+  const r=+document.getElementById('impR').value/100,D0=+document.getElementById('impD').value,n=+document.getElementById('impN').value,T=40;
+  document.getElementById('impRv').textContent=Math.round(r*100)+'%';document.getElementById('impDv').textContent=D0;document.getElementById('impNv').textContent=n;
+  const d=(D0*r/T)*100, rec=D0*r*n;
+  const hi=equipment.filter(e=>e.status==='Faulty / High Risk').length,open=tickets.filter(t=>t.status!=='Resolved').length,res=tickets.filter(t=>t.status==='Resolved').length;
+  document.getElementById('impLive').innerHTML=`
+    <div class="stat"><div class="n">${equipment.length}</div><div class="l">Devices monitored (live)</div></div>
+    <div class="stat"><div class="n" style="color:var(--bad)">${hi}</div><div class="l">High-risk now</div></div>
+    <div class="stat"><div class="n" style="color:var(--accent)">${open}</div><div class="l">Open tickets</div></div>
+    <div class="stat"><div class="n" style="color:var(--ok)">${res}</div><div class="l">Faults fixed via tickets</div></div>`;
+  document.getElementById('impHead').innerHTML=`
+    <div class="stat"><div class="n" style="color:var(--ok)">${rec.toFixed(1)} h</div><div class="l">Teaching hours recovered per week</div></div>
+    <div class="stat"><div class="n">${(D0/T*100).toFixed(1)}% → ${(D0*(1-r)/T*100).toFixed(1)}%</div><div class="l">Teaching time lost to equipment faults</div></div>
+    <div class="stat"><div class="n" style="color:var(--accent)">+${d.toFixed(1)} pts</div><div class="l">Teaching time regained</div></div>`;
+  document.getElementById('impCards').innerHTML=IMP.map(m=>{
+    const a=m.f(r,d),b=m.base,sc=Math.max(a,b)*1.15,good=m.down?a<=b:a>=b,diff=a-b;
+    return `<div class="card" style="margin:0"><div class="row" style="justify-content:space-between"><b>${m.n}</b><span class="badge">Group ${m.g}</span></div>
+      <div style="font-size:12px;color:var(--muted);margin:4px 0 8px">${m.kpi}</div>
+      <div style="font-size:11.5px">Without ClassCare: <b>${b.toFixed(1)}${m.u}</b></div>
+      <div style="background:var(--panel2);border-radius:4px;height:8px;margin:3px 0 7px"><div style="width:${b/sc*100}%;height:8px;border-radius:4px;background:var(--muted)"></div></div>
+      <div style="font-size:11.5px">With ClassCare: <b>${a.toFixed(1)}${m.u}</b> <span class="pill ${good?'ok':'warn'}" style="margin-left:6px">${diff>0?'+':''}${diff.toFixed(1)}</span></div>
+      <div style="background:var(--panel2);border-radius:4px;height:8px;margin:3px 0 8px"><div style="width:${a/sc*100}%;height:8px;border-radius:4px;background:var(--ok)"></div></div>
+      <div style="font-size:12px;color:var(--muted)">${m.why}</div></div>`;}).join('');
+  document.getElementById('impAssume').innerHTML='Teaching time recovered = baseline downtime × downtime avoided ÷ 40 teaching hrs per week. Baselines and coefficients are demo assumptions:<ul style="margin:6px 0 0 18px">'+IMP.map(m=>`<li>${m.n}: baseline ${m.base}${m.u}; effect ${m.co}</li>`).join('')+'</ul>';
+}
+['impR','impD','impN'].forEach(id=>document.getElementById(id).addEventListener('input',renderImpact));
+document.querySelector('[data-tab="impact"]').addEventListener('click',renderImpact);
+renderImpact();
+document.getElementById('goImpact').addEventListener('click',()=>document.querySelector('[data-tab="impact"]').click());
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tabBtn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tabBtn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+document.getElementById('scanBtn').addEventListener('click', runScan);
+
+// ---------- Chatbot (simulated Dialogflow) ----------
+const chatMsgs = document.getElementById('chatMsgs');
+function addMsg(text, who){
+  const d=document.createElement('div');
+  d.className='msg '+who;
+  d.textContent=text;
+  chatMsgs.appendChild(d);
+  chatMsgs.scrollTop=chatMsgs.scrollHeight;
+}
+function botReply(q){
+  const ql=q.toLowerCase();
+  if(ql.includes('room 204') || ql.includes('204')){
+    const e = equipment.find(e=>e.room==="LH-204" && e.type==="Projector");
+    if(e) return `LH-204 Projector risk score: ${e.risk}/100 (${e.status}). ${e.status!=='Healthy' ? 'A ticket has likely been raised — check the Tickets tab.' : 'No action needed currently.'}`;
+    return "I don't have data on that device yet — try running a monitoring scan first.";
+  }
+  if(ql.includes('open ticket')){
+    const open = tickets.filter(t=>t.status!=='Resolved');
+    if(!open.length) return "There are no open tickets right now.";
+    return `There are ${open.length} open ticket(s): ` + open.slice(0,3).map(t=>`#${t.id} (${t.equipId}, ${t.status})`).join(', ');
+  }
+  if(ql.includes('report') && ql.includes('ac') && ql.includes('12')){
+    const e = equipment.find(e=>e.room==="Sem-12" && e.type==="AC Unit");
+    if(e){ e.risk=Math.max(e.risk,75); e.status="Faulty / High Risk"; createTicket(e); renderEquipment(); renderStats(); renderTickets();
+      return "Thanks — I've logged the AC issue in Sem-12 and auto-created a maintenance ticket. You'll see it under Tickets & Follow-up.";
+    }
+  }
+  if(ql.includes('carbon') || ql.includes('energy') || ql.includes('co2') || ql.includes('co₂')){
+    return "Check the Energy & Carbon tab — run a harvest cycle to see kWh recovered from device waste heat and CO₂ emissions avoided.";
+  }
+  if(/\bhi\b|\bhello\b|\bhey\b/.test(ql)) return "Hi! I can check equipment risk, tickets, or energy recovery. Try a suggestion below.";
+  return "I can help with: equipment status, tickets, or energy & carbon data. Could you rephrase your question?";
+}
+function sendChat(){
+  const input=document.getElementById('chatInput');
+  const q=input.value.trim();
+  if(!q) return;
+  addMsg(q,'user');
+  input.value='';
+  setTimeout(()=>addMsg(botReply(q),'bot'), 350);
+}
+document.getElementById('chatSend').addEventListener('click', sendChat);
+document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(); });
+document.querySelectorAll('#chat .chip').forEach(c=>c.addEventListener('click',()=>{
+  document.getElementById('chatInput').value=c.dataset.q; sendChat();
+}));
+
+// ---------- Init ----------
+seedEquipment();
+renderEquipment(); renderStats(); renderTickets(); renderAudit();
+renderPending(); applyRole();
+renderOverview();
+addMsg("Hi, I'm the ClassCare assistant. Ask me about equipment risk, tickets, or report an issue.",'bot');
+const tick=()=>{ document.getElementById('clock').textContent = new Date().toLocaleTimeString(); };tick();setInterval(tick, 1000);
+</script>
+</body>
+</html>
